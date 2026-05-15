@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ResumeAI — Smart Job Matching</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     LANDING PAGE
+════════════════════════════════════════════ -->
+<div id="landingPage">
+
+  <!-- Navbar -->
+  <nav class="land-nav">
+    <div class="land-nav-inner">
+      <div class="logo"><span class="logo-icon">⚡</span> ResumeAI</div>
+      <div class="land-nav-links">
+        <a href="#how">How it works</a>
+        <a href="#features">Features</a>
+        <button class="btn-ghost" onclick="showAuth('login')">Login</button>
+        <button class="btn-cta" onclick="showAuth('register')">Get Started Free</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">🚀 AI-Powered Resume Matching</div>
+    <h1>Find jobs that <span class="grad">actually match</span><br/>your skills</h1>
+    <p class="hero-sub">Upload your resume. Our AI extracts your skills, understands synonyms, and ranks every job by how well you match — not just keywords.</p>
+    <div class="hero-btns">
+      <button class="btn-cta btn-lg" onclick="showAuth('register')">Upload Your Resume →</button>
+      <button class="btn-ghost btn-lg" onclick="showAuth('login')">Sign In</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><strong>AI-Powered</strong><span>Skill Extraction</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><strong>Synonym</strong><span>Aware Matching</span></div>
+      <div class="hstat-div"></div>
+      <div class="hstat"><strong>Weighted</strong><span>Score Ranking</span></div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section" id="how">
+    <div class="section-inner">
+      <div class="section-label">HOW IT WORKS</div>
+      <h2 class="section-title">Three steps to your best match</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-icon">📄</div>
+          <h3>Upload Resume</h3>
+          <p>Upload PDF, DOCX, or TXT. Apache Tika extracts all text automatically.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-icon">🧠</div>
+          <h3>AI Skill Analysis</h3>
+          <p>Our engine detects skills, resolves synonyms like "Spring Boot → Spring", and scores confidence.</p>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-icon">🎯</div>
+          <h3>Get Ranked Matches</h3>
+          <p>Jobs are ranked by weighted skill score + TF-IDF text similarity. See your % match instantly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section section-dark" id="features">
+    <div class="section-inner">
+      <div class="section-label">FEATURES</div>
+      <h2 class="section-title">Smarter than keyword matching</h2>
+      <div class="features-grid">
+        <div class="feat-card">
+          <div class="feat-icon">🔍</div>
+          <h3>Intelligent Extraction</h3>
+          <p>Regex + keyword scanning across 50+ technologies. Confidence scores per skill.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🔗</div>
+          <h3>Synonym Mapping</h3>
+          <p>"Spring Boot", "Spring MVC", "Spring Framework" all match a job requiring "Spring".</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">⚖️</div>
+          <h3>Weighted Scoring</h3>
+          <p>Mandatory skills carry 3× weight. Optional skills carry 1×. Fair, transparent scoring.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📊</div>
+          <h3>TF-IDF Similarity</h3>
+          <p>Cosine similarity between your resume text and job description for deeper context matching.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">🔐</div>
+          <h3>JWT Security</h3>
+          <p>Your data is protected with industry-standard JWT authentication and role-based access.</p>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon">📈</div>
+          <h3>Match Labels</h3>
+          <p>Excellent (≥80%), Good (≥60%), Fair (≥40%), Low — clear at a glance.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="cta-banner">
+    <h2>Ready to find your perfect job match?</h2>
+    <p>It's free. No credit card needed.</p>
+    <button class="btn-cta btn-lg" onclick="showAuth('register')">Get Started Now →</button>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="logo"><span class="logo-icon">⚡</span> ResumeAI</div>
+    <p>AI-Based Smart Resume Analyzer & Job Matching System</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH PAGE
+════════════════════════════════════════════ -->
+<div id="authPage" class="hidden">
+  <div class="auth-layout">
+    <div class="auth-left">
+      <button class="back-btn" onclick="showLanding()">← Back</button>
+      <div class="auth-brand"><span class="logo-icon">⚡</span> ResumeAI</div>
+      <h2>Match your resume<br/>to the right job.</h2>
+      <ul class="auth-perks">
+        <li>✓ AI-powered skill extraction</li>
+        <li>✓ Synonym-aware matching</li>
+        <li>✓ Weighted job scoring</li>
+        <li>✓ Instant ranked results</li>
+      </ul>
+    </div>
+    <div class="auth-right">
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">Sign In</button>
+          <button class="auth-tab" id="tabRegister" onclick="switchAuthTab('register')">Create Account</button>
+        </div>
+
+        <!-- Login -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="field">
+            <label>Email address</label>
+            <input type="email" id="loginEmail" placeholder="you@example.com" required/>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required/>
+          </div>
+          <div id="loginErr" class="form-err hidden"></div>
+          <button type="submit" class="btn-submit" id="loginBtn">Sign In</button>
+          <p class="auth-switch">Don't have an account? <a href="#" onclick="switchAuthTab('register')">Create one</a></p>
+        </form>
+
+        <!-- Register -->
+        <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+          <div class="field">
+            <label>Full name</label>
+            <input type="text" id="regName" placeholder="John Doe" required/>
+          </div>
+          <div class="field">
+            <label>Email address</label>
+            <input type="email" id="regEmail" placeholder="you@example.com" required/>
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="regPassword" placeholder="Min 6 characters" required minlength="6"/>
+          </div>
+          <div id="registerErr" class="form-err hidden"></div>
+          <button type="submit" class="btn-submit" id="registerBtn">Create Account</button>
+          <p class="auth-switch">Already have an account? <a href="#" onclick="switchAuthTab('login')">Sign in</a></p>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     APP (after login)
+════════════════════════════════════════════ -->
+<div id="appPage" class="hidden">
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-brand"><span class="logo-icon">⚡</span> ResumeAI</div>
+    <nav class="sb-nav">
+      <a class="sb-link active" id="sb-dashboard" onclick="navigate('dashboard')">
+        <span class="sb-icon">🏠</span> Dashboard
+      </a>
+      <a class="sb-link" id="sb-resumes" onclick="navigate('resumes')">
+        <span class="sb-icon">📄</span> My Resumes
+      </a>
+      <a class="sb-link" id="sb-jobs" onclick="navigate('jobs')">
+        <span class="sb-icon">💼</span> Jobs
+      </a>
+      <a class="sb-link" id="sb-matches" onclick="navigate('matches')">
+        <span class="sb-icon">🎯</span> Matches
+      </a>
+    </nav>
+    <div class="sb-bottom">
+      <div class="sb-user" id="sbUser"></div>
+      <button class="sb-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="app-main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="topbar-title" id="topbarTitle">Dashboard</div>
+      <div class="topbar-actions" id="topbarActions"></div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div id="view-dashboard" class="view active">
+      <div class="dash-welcome">
+        <div>
+          <h2 id="welcomeHeading">Welcome back 👋</h2>
+          <p class="muted">Here's your job matching overview</p>
+        </div>
+        <button class="btn-primary" onclick="openUploadModal()">+ Upload Resume</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-icon">📄</div>
+          <div class="kpi-body">
+            <div class="kpi-val" id="kpiResumes">—</div>
+            <div class="kpi-label">Resumes</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">💼</div>
+          <div class="kpi-body">
+            <div class="kpi-val" id="kpiJobs">—</div>
+            <div class="kpi-label">Jobs Available</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">🎯</div>
+          <div class="kpi-body">
+            <div class="kpi-val" id="kpiBest">—</div>
+            <div class="kpi-label">Best Match</div>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">📊</div>
+          <div class="kpi-body">
+            <div class="kpi-val" id="kpiMatches">—</div>
+            <div class="kpi-label">Total Matches</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="dash-panel">
+          <div class="panel-head">
+            <span>Recent Resumes</span>
+            <a href="#" onclick="navigate('resumes')" class="panel-link">View all →</a>
+          </div>
+          <div id="dashResumeList"></div>
+        </div>
+        <div class="dash-panel">
+          <div class="panel-head">
+            <span>Top Matches</span>
+            <a href="#" onclick="navigate('matches')" class="panel-link">View all →</a>
+          </div>
+          <div id="dashMatchList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RESUMES ── -->
+    <div id="view-resumes" class="view">
+      <div class="view-header">
+        <div>
+          <h2>My Resumes</h2>
+          <p class="muted">Upload and manage your resumes</p>
+        </div>
+        <button class="btn-primary" onclick="openUploadModal()">+ Upload Resume</button>
+      </div>
+      <div id="resumeGrid" class="card-grid"></div>
+    </div>
+
+    <!-- ── JOBS ── -->
+    <div id="view-jobs" class="view">
+      <div class="view-header">
+        <div>
+          <h2>Job Listings</h2>
+          <p class="muted">Browse and post job openings</p>
+        </div>
+        <button class="btn-primary" onclick="openJobModal()">+ Post a Job</button>
+      </div>
+      <div id="jobGrid" class="card-grid"></div>
+    </div>
+
+    <!-- ── MATCHES ── -->
+    <div id="view-matches" class="view">
+      <div class="view-header">
+        <div>
+          <h2>My Matches</h2>
+          <p class="muted">AI-ranked job matches across all your resumes</p>
+        </div>
+      </div>
+      <div id="matchList"></div>
+    </div>
+
+  </div><!-- /app-main -->
+</div><!-- /appPage -->
+
+<!-- ═══════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════ -->
+
+<!-- Upload Modal -->
+<div id="uploadModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Upload Resume</h3>
+      <button class="modal-x" onclick="closeModal('uploadModal')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon">📂</div>
+        <p class="drop-title">Drop your resume here</p>
+        <p class="drop-hint">or click to browse — PDF, DOCX, TXT up to 10MB</p>
+        <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt" style="display:none" onchange="onFileSelect(event)"/>
+      </div>
+      <div id="filePreview" class="file-preview hidden"></div>
+      <div id="uploadErr" class="form-err hidden"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn-primary" id="uploadBtn" onclick="doUpload()" disabled>Analyze Resume</button>
+    </div>
+  </div>
+</div>
+
+<!-- Job Modal -->
+<div id="jobModal" class="modal-bg hidden">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <h3>Post a Job</h3>
+      <button class="modal-x" onclick="closeModal('jobModal')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <label>Job Title</label>
+        <input type="text" id="jobTitle" placeholder="e.g. Senior Java Developer"/>
+      </div>
+      <div class="field">
+        <label>Job Description</label>
+        <textarea id="jobDesc" rows="4" placeholder="Describe the role, responsibilities, and requirements..."></textarea>
+      </div>
+      <div class="field">
+        <label>Required Skills</label>
+        <p class="field-hint">Add skills and mark each as Mandatory or Optional</p>
+        <div id="skillRows"></div>
+        <button class="btn-add-skill" onclick="addSkillRow()">+ Add Skill</button>
+      </div>
+      <div id="jobErr" class="form-err hidden"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" onclick="closeModal('jobModal')">Cancel</button>
+      <button class="btn-primary" onclick="doCreateJob()">Post Job</button>
+    </div>
+  </div>
+</div>
+
+<!-- Match Result Modal -->
+<div id="matchModal" class="modal-bg hidden">
+  <div class="modal modal-lg">
+    <div class="modal-hd">
+      <h3 id="matchModalTitle">AI Match Results</h3>
+      <button class="modal-x" onclick="closeModal('matchModal')">✕</button>
+    </div>
+    <div class="modal-bd" id="matchModalBody">
+      <div class="loading-wrap"><div class="spinner"></div><p>Analyzing your resume…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
