@@ -4,6 +4,7 @@
 const S = {
   token: localStorage.getItem('ra_token'),
   email: localStorage.getItem('ra_email'),
+  role:  localStorage.getItem('ra_role'),   // "USER" or "ADMIN"
   resumes: [],
   jobs: [],
   matches: [],
@@ -55,24 +56,54 @@ function showAuth(tab = 'login') {
 }
 function showApp() {
   hide('landingPage'); hide('authPage'); show('appPage');
-  document.getElementById('sbUser').textContent = S.email;
-  document.getElementById('welcomeHeading').textContent =
-    `Welcome back, ${S.email.split('@')[0]} 👋`;
+  const userEl = document.getElementById('sbUser');
+  userEl.innerHTML = `${S.email}<br/><span style="font-size:.7rem;color:${S.role==='ADMIN'?'var(--accent)':'var(--muted)'};font-weight:600">${S.role}</span>`;
+
+  if (S.role === 'ADMIN') {
+    document.getElementById('adminNav').classList.remove('hidden');
+    document.getElementById('userNav').classList.add('hidden');
+    document.getElementById('adminDashboard').classList.remove('hidden');
+    document.getElementById('userDashboard').classList.add('hidden');
+    document.getElementById('adminWelcome').textContent = `Welcome, ${S.email.split('@')[0]} 👋`;
+  } else {
+    document.getElementById('welcomeHeading').textContent = `Welcome back, ${S.email.split('@')[0]} 👋`;
+  }
   navigate('dashboard');
 }
 
 function navigate(view) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
-  document.getElementById(`view-${view}`).classList.add('active');
-  const sb = document.getElementById(`sb-${view}`);
-  if (sb) sb.classList.add('active');
-  const titles = { dashboard:'Dashboard', resumes:'My Resumes', jobs:'Jobs', matches:'My Matches' };
+
+  const viewEl = document.getElementById(`view-${view}`);
+  if (!viewEl) return;
+  viewEl.classList.add('active');
+
+  // Highlight correct sidebar link — try exact ID first, then fallback patterns
+  const sbId = view === 'admin-users' ? 'sb-admin-users'
+             : view === 'admin-matches' ? 'sb-admin-matches'
+             : view === 'jobs' && S.role === 'ADMIN' ? 'sb-jobs-admin'
+             : `sb-${view}`;
+  const sbEl = document.getElementById(sbId);
+  if (sbEl) sbEl.classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard',
+    resumes: 'My Resumes',
+    jobs: 'Jobs',
+    matches: 'My Matches',
+    'admin-users': 'All Users',
+    'admin-matches': 'All Match Scores',
+  };
   document.getElementById('topbarTitle').textContent = titles[view] || '';
-  if (view === 'dashboard') loadDashboard();
-  if (view === 'resumes')   loadResumes();
-  if (view === 'jobs')      loadJobs();
-  if (view === 'matches')   loadMatches();
+  document.getElementById('topbarActions').innerHTML = '';
+
+  if (view === 'dashboard')     loadDashboard();
+  if (view === 'resumes')       loadResumes();
+  if (view === 'jobs')          loadJobs();
+  if (view === 'matches')       loadMatches();
+  if (view === 'admin-users')   loadAdminUsers();
+  if (view === 'admin-matches') loadAdminMatches();
 }
 
 /* ════════════════════════════════════════
@@ -124,14 +155,17 @@ async function handleRegister(e) {
 }
 
 function saveSession(data) {
-  S.token = data.token; S.email = data.email;
+  S.token = data.token; S.email = data.email; S.role = data.role;
   localStorage.setItem('ra_token', data.token);
   localStorage.setItem('ra_email', data.email);
+  localStorage.setItem('ra_role',  data.role);
 }
 
 function logout() {
-  S.token = null; S.email = null;
-  localStorage.removeItem('ra_token'); localStorage.removeItem('ra_email');
+  S.token = null; S.email = null; S.role = null;
+  localStorage.removeItem('ra_token');
+  localStorage.removeItem('ra_email');
+  localStorage.removeItem('ra_role');
   showLanding();
 }
 
@@ -139,6 +173,14 @@ function logout() {
    DASHBOARD
 ════════════════════════════════════════ */
 async function loadDashboard() {
+  if (S.role === 'ADMIN') {
+    await loadAdminDashboard();
+  } else {
+    await loadUserDashboard();
+  }
+}
+
+async function loadUserDashboard() {
   try {
     const [resumes, jobs, matches] = await Promise.all([
       api('GET', '/resume'),
@@ -158,7 +200,6 @@ async function loadDashboard() {
       : '—';
     document.getElementById('kpiBest').textContent = best;
 
-    // Mini resume list
     const rl = document.getElementById('dashResumeList');
     if (!S.resumes.length) {
       rl.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem">No resumes yet</div>';
@@ -170,11 +211,10 @@ async function loadDashboard() {
             <div class="mini-name">${esc(r.fileName)}</div>
             <div class="mini-sub">${(r.extractedSkills||[]).length} skills · ${fmtDate(r.uploadedAt)}</div>
           </div>
-          <button class="btn-match" onclick="runMatch(${r.id},'${esc(r.fileName)}')">Match</button>
+          <button class="btn-match" onclick="runMatch('${r.id}','${esc(r.fileName)}')">Match</button>
         </div>`).join('');
     }
 
-    // Mini match list
     const ml = document.getElementById('dashMatchList');
     if (!S.matches.length) {
       ml.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem">No matches yet — upload a resume and click Match</div>';
@@ -190,6 +230,51 @@ async function loadDashboard() {
         </div>`;
       }).join('');
     }
+  } catch (ex) { toast(ex.message, 'error'); }
+}
+
+async function loadAdminDashboard() {
+  try {
+    const [users, jobs, allMatches] = await Promise.all([
+      api('GET', '/admin/users'),
+      api('GET', '/jobs'),
+      api('GET', '/admin/matches'),
+    ]);
+    const u = users || [], j = jobs || [], m = allMatches || [];
+
+    document.getElementById('kpiUsers').textContent     = u.length;
+    document.getElementById('kpiJobsAdmin').textContent = j.length;
+    document.getElementById('kpiAllMatches').textContent = m.length;
+    const top = m.length ? Math.max(...m.map(x => x.finalScore || 0)).toFixed(0) + '%' : '—';
+    document.getElementById('kpiTopScore').textContent  = top;
+
+    // Recent users
+    const ul = document.getElementById('adminDashUsers');
+    ul.innerHTML = u.length ? u.slice(0, 5).map(usr => `
+      <div class="mini-resume">
+        <div class="mini-icon">${usr.role === 'ADMIN' ? '🛡️' : '👤'}</div>
+        <div style="flex:1;overflow:hidden">
+          <div class="mini-name">${esc(usr.name)}</div>
+          <div class="mini-sub">${esc(usr.email)}</div>
+        </div>
+        <span class="role-badge ${usr.role === 'ADMIN' ? 'role-admin' : 'role-user'}">${usr.role}</span>
+      </div>`).join('')
+    : '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem">No users yet</div>';
+
+    // Top matches
+    const ml = document.getElementById('adminDashMatches');
+    ml.innerHTML = m.length ? m.slice(0, 5).map(x => {
+      const lbl = label(x.finalScore);
+      return `<div class="mini-match">
+        <div style="flex:1;overflow:hidden">
+          <div class="mini-match-title">${esc(x.jobTitle || '')}</div>
+          <div class="mini-sub">${esc(x.userEmail || '')} · ${(x.finalScore||0).toFixed(1)}%</div>
+        </div>
+        <span class="mini-badge badge-${lbl.toLowerCase()}">${lbl}</span>
+      </div>`;
+    }).join('')
+    : '<div style="padding:1.5rem;text-align:center;color:var(--muted);font-size:.85rem">No matches yet</div>';
+
   } catch (ex) { toast(ex.message, 'error'); }
 }
 
@@ -231,7 +316,7 @@ function renderResumes() {
       </div>
       <div class="rc-footer">
         <span class="rc-conf">${skills.length} skills extracted</span>
-        <button class="btn-match" onclick="runMatch(${r.id},'${esc(r.fileName)}')">⚡ Match Jobs</button>
+        <button class="btn-match" onclick="runMatch('${r.id}','${esc(r.fileName)}')">⚡ Match Jobs</button>
       </div>
     </div>`;
   }).join('');
@@ -243,6 +328,14 @@ function renderResumes() {
 async function loadJobs() {
   const el = document.getElementById('jobGrid');
   el.innerHTML = '<div class="empty"><div class="spinner" style="margin:0 auto 1rem"></div></div>';
+
+  const topbarActions = document.getElementById('topbarActions');
+  if (S.role === 'ADMIN') {
+    topbarActions.innerHTML = `<button class="btn-primary" onclick="openJobModal()">+ Post a Job</button>`;
+  } else {
+    topbarActions.innerHTML = '';
+  }
+
   try {
     S.jobs = await api('GET', '/jobs') || [];
     renderJobs();
@@ -493,6 +586,145 @@ function setLoading(btn, text) { btn.disabled = true; btn.textContent = text; }
 function resetBtn(btn, text)   { btn.disabled = false; btn.textContent = text; }
 
 /* ════════════════════════════════════════
+   ADMIN — USERS
+════════════════════════════════════════ */
+async function loadAdminUsers() {
+  const el = document.getElementById('adminUserTable');
+  el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+  try {
+    const users = await api('GET', '/admin/users') || [];
+    if (!users.length) {
+      el.innerHTML = '<div class="empty">No users registered yet.</div>';
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrap">
+        <table class="user-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map((u, i) => `
+              <tr>
+                <td style="color:var(--muted)">${i + 1}</td>
+                <td><strong>${esc(u.name)}</strong></td>
+                <td>${esc(u.email)}</td>
+                <td><span class="role-badge ${u.role === 'ADMIN' ? 'role-admin' : 'role-user'}">${u.role}</span></td>
+                <td>
+                  <button class="btn-primary" style="font-size:.75rem;padding:.3rem .7rem"
+                    onclick="viewUserMatches('${u.id}','${esc(u.email)}')">
+                    View Matches
+                  </button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  } catch (ex) { el.innerHTML = `<div class="empty">${ex.message}</div>`; }
+}
+
+async function viewUserMatches(userId, email) {
+  document.getElementById('matchModalTitle').textContent = `Matches for ${email}`;
+  document.getElementById('matchModalBody').innerHTML =
+    '<div class="loading-wrap"><div class="spinner"></div></div>';
+  openModal('matchModal');
+  try {
+    const matches = await api('GET', `/admin/matches/${userId}`) || [];
+    if (!matches.length) {
+      document.getElementById('matchModalBody').innerHTML =
+        '<div class="empty" style="border:none">No matches yet for this user.</div>';
+      return;
+    }
+    document.getElementById('matchModalBody').innerHTML =
+      matches.map(m => matchItem({
+        jobTitle: m.jobTitle,
+        skillScore: m.skillScore,
+        textSimilarityScore: m.textSimilarityScore,
+        finalScore: m.finalScore,
+        matchLabel: label(m.finalScore)
+      })).join('');
+  } catch (ex) {
+    document.getElementById('matchModalBody').innerHTML =
+      `<div class="form-err">${ex.message}</div>`;
+  }
+}
+
+/* ════════════════════════════════════════
+   ADMIN — ALL MATCHES
+════════════════════════════════════════ */
+async function loadAdminMatches() {
+  const el = document.getElementById('adminMatchList');
+  el.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+  try {
+    const matches = await api('GET', '/admin/matches') || [];
+    if (!matches.length) {
+      el.innerHTML = '<div class="empty">No matches recorded yet.</div>';
+      return;
+    }
+    el.innerHTML = matches.map(m => {
+      const lbl = label(m.finalScore);
+      const cls = lbl.toLowerCase();
+      return `
+      <div class="admin-match-item">
+        <div class="ami-user">
+          <strong>${esc(m.userEmail || 'Unknown')}</strong>
+          ${esc(m.resumeFileName || '')}
+        </div>
+        <div class="ami-center">
+          <div class="ami-job">${esc(m.jobTitle || '')}</div>
+          <div class="ami-scores">
+            <span>Skill: <strong>${(m.skillScore||0).toFixed(1)}%</strong></span>
+            <span>Text: <strong>${(m.textSimilarityScore||0).toFixed(1)}%</strong></span>
+            <span>Final: <strong>${(m.finalScore||0).toFixed(1)}%</strong></span>
+          </div>
+          <div class="score-bar" style="margin-top:.4rem">
+            <div class="score-fill fill-${cls}" style="width:${m.finalScore||0}%"></div>
+          </div>
+        </div>
+        <div class="badge badge-${cls}">${lbl}<br/><span style="font-size:1rem">${(m.finalScore||0).toFixed(0)}%</span></div>
+      </div>`;
+    }).join('');
+  } catch (ex) { el.innerHTML = `<div class="empty">${ex.message}</div>`; }
+}
+
+/* ════════════════════════════════════════
+   ADMIN — REGISTER NEW ADMIN
+════════════════════════════════════════ */
+function openAdminRegisterModal() {
+  document.getElementById('adminRegName').value = '';
+  document.getElementById('adminRegEmail').value = '';
+  document.getElementById('adminRegPassword').value = '';
+  document.getElementById('adminRegErr').classList.add('hidden');
+  openModal('adminRegisterModal');
+}
+
+async function doAdminRegister() {
+  const err = document.getElementById('adminRegErr');
+  err.classList.add('hidden');
+  const name     = document.getElementById('adminRegName').value.trim();
+  const email    = document.getElementById('adminRegEmail').value.trim();
+  const password = document.getElementById('adminRegPassword').value;
+  if (!name || !email || !password) {
+    err.textContent = 'All fields are required.';
+    err.classList.remove('hidden'); return;
+  }
+  try {
+    await api('POST', '/admin/register', { name, email, password });
+    closeModal('adminRegisterModal');
+    toast('Admin account created!', 'success');
+    loadAdminUsers();
+  } catch (ex) {
+    err.textContent = ex.message; err.classList.remove('hidden');
+  }
+}
+
+/* ════════════════════════════════════════
    BOOT
 ════════════════════════════════════════ */
 function isTokenExpired(token) {
@@ -505,9 +737,9 @@ function isTokenExpired(token) {
 if (S.token && !isTokenExpired(S.token)) {
   showApp();
 } else {
-  // Clear any stale token
   localStorage.removeItem('ra_token');
   localStorage.removeItem('ra_email');
-  S.token = null; S.email = null;
+  localStorage.removeItem('ra_role');
+  S.token = null; S.email = null; S.role = null;
   showLanding();
 }

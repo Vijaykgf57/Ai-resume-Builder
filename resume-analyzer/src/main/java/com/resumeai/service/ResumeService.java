@@ -3,12 +3,14 @@ package com.resumeai.service;
 import com.resumeai.ai.SkillExtractor;
 import com.resumeai.ai.TextExtractor;
 import com.resumeai.dto.ResumeResponse;
-import com.resumeai.entity.*;
-import com.resumeai.repository.*;
+import com.resumeai.entity.Resume;
+import com.resumeai.entity.SkillEntry;
+import com.resumeai.entity.User;
+import com.resumeai.repository.ResumeRepository;
+import com.resumeai.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -21,84 +23,63 @@ import java.util.stream.Collectors;
 public class ResumeService {
 
     private final ResumeRepository resumeRepository;
-    private final SkillRepository skillRepository;
     private final UserRepository userRepository;
     private final TextExtractor textExtractor;
     private final SkillExtractor skillExtractor;
 
-    @Transactional
     public ResumeResponse uploadResume(MultipartFile file, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Step 1: Extract text from file using Apache Tika
+        // Step 1: Extract text via Apache Tika
         String extractedText = textExtractor.extract(file);
 
-        // Step 2: Build and save resume entity
-        Resume resume = Resume.builder()
-                .user(user)
-                .fileName(file.getOriginalFilename())
-                .extractedText(extractedText)
-                .build();
-        resume = resumeRepository.save(resume);
+        // Step 2: AI skill extraction
+        Map<String, Double> skillMap = skillExtractor.extractSkills(extractedText);
+        log.info("Extracted {} skills from: {}", skillMap.size(), file.getOriginalFilename());
 
-        // Step 3: AI skill extraction
-        Map<String, Double> extractedSkills = skillExtractor.extractSkills(extractedText);
-        log.info("Extracted {} skills from resume: {}", extractedSkills.size(), file.getOriginalFilename());
-
-        // Step 4: Persist skills and resume-skill links
-        final Resume savedResume = resume;
-        List<ResumeSkill> resumeSkills = extractedSkills.entrySet().stream()
-                .map(entry -> {
-                    Skill skill = findOrCreateSkill(entry.getKey());
-                    return ResumeSkill.builder()
-                            .resume(savedResume)
-                            .skill(skill)
-                            .confidenceScore(entry.getValue())
-                            .build();
-                })
+        // Step 3: Build embedded skill list
+        List<SkillEntry> skills = skillMap.entrySet().stream()
+                .map(e -> SkillEntry.builder()
+                        .skillName(e.getKey())
+                        .category("GENERAL")
+                        .confidenceScore(e.getValue())
+                        .build())
                 .collect(Collectors.toList());
 
-        // Save via cascade by setting on resume
-        savedResume.setResumeSkills(resumeSkills);
-        resumeRepository.save(savedResume);
+        // Step 4: Save resume document
+        Resume resume = Resume.builder()
+                .userId(user.getId())
+                .fileName(file.getOriginalFilename())
+                .extractedText(extractedText)
+                .extractedSkills(skills)
+                .build();
+        resume.prePersist();
+        resume = resumeRepository.save(resume);
 
-        return buildResumeResponse(savedResume, resumeSkills);
+        return toResponse(resume);
     }
 
     public List<ResumeResponse> getResumesForUser(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        return resumeRepository.findByUserId(user.getId())
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
 
-        return resumeRepository.findByUserId(user.getId()).stream()
-                .map(r -> buildResumeResponse(r, r.getResumeSkills()))
+    private ResumeResponse toResponse(Resume r) {
+        List<ResumeResponse.SkillInfo> skillInfos = r.getExtractedSkills().stream()
+                .map(s -> ResumeResponse.SkillInfo.builder()
+                        .skillName(s.getSkillName())
+                        .category(s.getCategory())
+                        .confidenceScore(s.getConfidenceScore())
+                        .build())
                 .collect(Collectors.toList());
-    }
-
-    private Skill findOrCreateSkill(String skillName) {
-        return skillRepository.findBySkillNameIgnoreCase(skillName)
-                .orElseGet(() -> skillRepository.save(
-                        Skill.builder()
-                                .skillName(skillName)
-                                .category("GENERAL")
-                                .build()
-                ));
-    }
-
-    private ResumeResponse buildResumeResponse(Resume resume, List<ResumeSkill> skills) {
-        List<ResumeResponse.SkillInfo> skillInfos = skills == null ? List.of() :
-                skills.stream()
-                        .map(rs -> ResumeResponse.SkillInfo.builder()
-                                .skillName(rs.getSkill().getSkillName())
-                                .category(rs.getSkill().getCategory())
-                                .confidenceScore(rs.getConfidenceScore())
-                                .build())
-                        .collect(Collectors.toList());
 
         return ResumeResponse.builder()
-                .id(resume.getId())
-                .fileName(resume.getFileName())
-                .uploadedAt(resume.getUploadedAt())
+                .id(r.getId())
+                .fileName(r.getFileName())
+                .uploadedAt(r.getUploadedAt())
                 .extractedSkills(skillInfos)
                 .build();
     }

@@ -261,3 +261,26 @@ a{text-decoration:none;color:inherit}
   .hstat-div{width:80px;height:1px}
   .land-nav-links .btn-ghost{display:none}
 }
+
+/* ── Admin sidebar section ── */
+.sb-section-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;padding:.75rem .9rem .25rem;margin-top:.5rem}
+
+/* ── Admin user table ── */
+.user-table{width:100%;border-collapse:collapse;font-size:.875rem}
+.user-table th{text-align:left;padding:.75rem 1rem;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface)}
+.user-table td{padding:.85rem 1rem;border-bottom:1px solid var(--border);color:var(--text)}
+.user-table tr:hover td{background:var(--surface2)}
+.user-table tr:last-child td{border-bottom:none}
+.role-badge{display:inline-block;padding:.2rem .6rem;border-radius:20px;font-size:.72rem;font-weight:700}
+.role-admin{background:rgba(6,214,160,.12);color:var(--accent);border:1px solid rgba(6,214,160,.3)}
+.role-user{background:rgba(99,102,241,.1);color:#a5b4fc;border:1px solid rgba(99,102,241,.25)}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+
+/* ── Admin match table ── */
+.admin-match-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:.6rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center}
+.ami-user{font-size:.78rem;color:var(--muted);white-space:nowrap}
+.ami-user strong{display:block;color:var(--muted2);font-size:.82rem}
+.ami-center{min-width:0}
+.ami-job{font-size:.95rem;font-weight:600;margin-bottom:.25rem}
+.ami-scores{display:flex;gap:1rem;flex-wrap:wrap;font-size:.75rem;color:var(--muted)}
+.ami-scores strong{color:var(--muted2)}

@@ -2,17 +2,13 @@ package com.resumeai.service;
 
 import com.resumeai.ai.MatchingEngine;
 import com.resumeai.dto.MatchResponse;
-import com.resumeai.entity.Job;
-import com.resumeai.entity.JobSkill;
-import com.resumeai.entity.MatchScore;
-import com.resumeai.entity.Resume;
-import com.resumeai.entity.ResumeSkill;
+import com.resumeai.entity.*;
 import com.resumeai.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,27 +20,24 @@ public class MatchingService {
     private final ResumeRepository resumeRepository;
     private final JobRepository jobRepository;
     private final MatchScoreRepository matchScoreRepository;
+    private final UserRepository userRepository;
     private final MatchingEngine matchingEngine;
 
-    /**
-     * Computes match scores for a given resume against all jobs.
-     * Saves/updates results in the database and returns ranked matches.
-     */
-    @Transactional
-    public MatchResponse computeMatches(Long resumeId, String userEmail) {
+    public MatchResponse computeMatches(String resumeId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("Resume not found: " + resumeId));
 
-        // Security: ensure resume belongs to requesting user
-        if (!resume.getUser().getEmail().equals(userEmail)) {
+        if (!resume.getUserId().equals(user.getId())) {
             throw new SecurityException("Access denied to resume: " + resumeId);
         }
 
         List<Job> allJobs = jobRepository.findAll();
-        List<ResumeSkill> resumeSkills = resume.getResumeSkills();
 
         List<MatchResponse.JobMatch> jobMatches = allJobs.stream()
-                .map(job -> computeAndSaveMatch(resume, job, resumeSkills))
+                .map(job -> computeAndSave(resume, job, user.getId()))
                 .sorted((a, b) -> Double.compare(b.getFinalScore(), a.getFinalScore()))
                 .collect(Collectors.toList());
 
@@ -57,69 +50,54 @@ public class MatchingService {
                 .build();
     }
 
-    /**
-     * Returns previously computed matches for a user's resumes.
-     */
     public List<MatchResponse.JobMatch> getMatchesForUser(String userEmail) {
-        Long userId = resumeRepository.findAll().stream()
-                .filter(r -> r.getUser().getEmail().equals(userEmail))
-                .map(r -> r.getUser().getId())
-                .findFirst()
-                .orElse(-1L);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        return matchScoreRepository.findByUserIdOrderByScoreDesc(userId)
+        return matchScoreRepository.findByUserIdOrderByFinalScoreDesc(user.getId())
                 .stream().map(this::toJobMatch).collect(Collectors.toList());
     }
 
-    private MatchResponse.JobMatch computeAndSaveMatch(Resume resume, Job job, List<ResumeSkill> resumeSkills) {
-        List<JobSkill> jobSkills = job.getJobSkills();
-
-        double skillScore = matchingEngine.computeSkillScore(resumeSkills, jobSkills);
-        double textScore  = matchingEngine.computeTextSimilarityScore(
-                resume.getExtractedText(), job.getDescription()
-        );
+    private MatchResponse.JobMatch computeAndSave(Resume resume, Job job, String userId) {
+        String userEmail = userRepository.findById(userId).map(u -> u.getEmail()).orElse("unknown");
+        double skillScore = matchingEngine.computeSkillScore(resume.getExtractedSkills(), job.getJobSkills());
+        double textScore  = matchingEngine.computeTextSimilarityScore(resume.getExtractedText(), job.getDescription());
         double finalScore = matchingEngine.computeFinalScore(skillScore, textScore);
 
-        // Upsert match score
-        MatchScore matchScore = matchScoreRepository
+        // Upsert
+        MatchScore ms = matchScoreRepository
                 .findByResumeIdAndJobId(resume.getId(), job.getId())
-                .orElse(MatchScore.builder().resume(resume).job(job).build());
+                .orElse(MatchScore.builder()
+                        .resumeId(resume.getId())
+                        .jobId(job.getId())
+                        .userId(userId)
+                        .userEmail(userEmail)
+                        .resumeFileName(resume.getFileName())
+                        .build());
 
-        matchScore.setSkillScore(skillScore);
-        matchScore.setTextSimilarityScore(textScore);
-        matchScore.setFinalScore(finalScore);
-        matchScoreRepository.save(matchScore);
+        ms.setJobTitle(job.getTitle());
+        ms.setSkillScore(skillScore);
+        ms.setTextSimilarityScore(textScore);
+        ms.setFinalScore(finalScore);
+        ms.setCalculatedAt(LocalDateTime.now());
+        matchScoreRepository.save(ms);
 
-        log.debug("Match: {} → {} | skill={} text={} final={}",
-                resume.getFileName(), job.getTitle(), skillScore, textScore, finalScore);
-
-        return MatchResponse.JobMatch.builder()
-                .jobId(job.getId())
-                .jobTitle(job.getTitle())
-                .skillScore(skillScore)
-                .textSimilarityScore(textScore)
-                .finalScore(finalScore)
-                .matchLabel(getMatchLabel(finalScore))
-                .calculatedAt(matchScore.getCalculatedAt())
-                .build();
+        return toJobMatch(ms);
     }
 
     private MatchResponse.JobMatch toJobMatch(MatchScore ms) {
         return MatchResponse.JobMatch.builder()
-                .jobId(ms.getJob().getId())
-                .jobTitle(ms.getJob().getTitle())
+                .jobId(ms.getJobId())
+                .jobTitle(ms.getJobTitle())
                 .skillScore(ms.getSkillScore())
                 .textSimilarityScore(ms.getTextSimilarityScore())
                 .finalScore(ms.getFinalScore())
-                .matchLabel(getMatchLabel(ms.getFinalScore()))
+                .matchLabel(getLabel(ms.getFinalScore()))
                 .calculatedAt(ms.getCalculatedAt())
                 .build();
     }
 
-    /**
-     * Converts a numeric score to a human-readable label.
-     */
-    private String getMatchLabel(double score) {
+    private String getLabel(double score) {
         if (score >= 80) return "Excellent";
         if (score >= 60) return "Good";
         if (score >= 40) return "Fair";

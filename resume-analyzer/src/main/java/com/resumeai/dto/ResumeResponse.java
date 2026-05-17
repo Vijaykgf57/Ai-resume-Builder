@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @Builder
 public class ResumeResponse {
-    private Long id;
+    private String id;
     private String fileName;
     private LocalDateTime uploadedAt;
     private List<SkillInfo> extractedSkills;

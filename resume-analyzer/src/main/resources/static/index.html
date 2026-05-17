@@ -203,15 +203,31 @@
       <a class="sb-link active" id="sb-dashboard" onclick="navigate('dashboard')">
         <span class="sb-icon">🏠</span> Dashboard
       </a>
-      <a class="sb-link" id="sb-resumes" onclick="navigate('resumes')">
-        <span class="sb-icon">📄</span> My Resumes
-      </a>
-      <a class="sb-link" id="sb-jobs" onclick="navigate('jobs')">
-        <span class="sb-icon">💼</span> Jobs
-      </a>
-      <a class="sb-link" id="sb-matches" onclick="navigate('matches')">
-        <span class="sb-icon">🎯</span> Matches
-      </a>
+      <!-- User-only links -->
+      <div id="userNav">
+        <a class="sb-link" id="sb-resumes" onclick="navigate('resumes')">
+          <span class="sb-icon">📄</span> My Resumes
+        </a>
+        <a class="sb-link" id="sb-jobs" onclick="navigate('jobs')">
+          <span class="sb-icon">💼</span> Jobs
+        </a>
+        <a class="sb-link" id="sb-matches" onclick="navigate('matches')">
+          <span class="sb-icon">🎯</span> My Matches
+        </a>
+      </div>
+      <!-- Admin-only links -->
+      <div id="adminNav" class="hidden">
+        <a class="sb-link" id="sb-jobs-admin" onclick="navigate('jobs')">
+          <span class="sb-icon">💼</span> Jobs
+        </a>
+        <div class="sb-section-label">Admin</div>
+        <a class="sb-link" id="sb-admin-users" onclick="navigate('admin-users')">
+          <span class="sb-icon">👥</span> All Users
+        </a>
+        <a class="sb-link" id="sb-admin-matches" onclick="navigate('admin-matches')">
+          <span class="sb-icon">📊</span> All Matches
+        </a>
+      </div>
     </nav>
     <div class="sb-bottom">
       <div class="sb-user" id="sbUser"></div>
@@ -230,61 +246,125 @@
 
     <!-- ── DASHBOARD ── -->
     <div id="view-dashboard" class="view active">
-      <div class="dash-welcome">
-        <div>
-          <h2 id="welcomeHeading">Welcome back 👋</h2>
-          <p class="muted">Here's your job matching overview</p>
+
+      <!-- USER dashboard -->
+      <div id="userDashboard">
+        <div class="dash-welcome">
+          <div>
+            <h2 id="welcomeHeading">Welcome back 👋</h2>
+            <p class="muted">Here's your job matching overview</p>
+          </div>
+          <button class="btn-primary" onclick="openUploadModal()">+ Upload Resume</button>
         </div>
-        <button class="btn-primary" onclick="openUploadModal()">+ Upload Resume</button>
+
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-icon">📄</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiResumes">—</div>
+              <div class="kpi-label">My Resumes</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">💼</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiJobs">—</div>
+              <div class="kpi-label">Jobs Available</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">🎯</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiBest">—</div>
+              <div class="kpi-label">Best Match</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiMatches">—</div>
+              <div class="kpi-label">Total Matches</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-grid">
+          <div class="dash-panel">
+            <div class="panel-head">
+              <span>Recent Resumes</span>
+              <a href="#" onclick="navigate('resumes')" class="panel-link">View all →</a>
+            </div>
+            <div id="dashResumeList"></div>
+          </div>
+          <div class="dash-panel">
+            <div class="panel-head">
+              <span>Top Matches</span>
+              <a href="#" onclick="navigate('matches')" class="panel-link">View all →</a>
+            </div>
+            <div id="dashMatchList"></div>
+          </div>
+        </div>
       </div>
 
-      <div class="kpi-row">
-        <div class="kpi">
-          <div class="kpi-icon">📄</div>
-          <div class="kpi-body">
-            <div class="kpi-val" id="kpiResumes">—</div>
-            <div class="kpi-label">Resumes</div>
+      <!-- ADMIN dashboard -->
+      <div id="adminDashboard" class="hidden">
+        <div class="dash-welcome">
+          <div>
+            <h2 id="adminWelcome">Welcome, Admin 👋</h2>
+            <p class="muted">Platform overview</p>
+          </div>
+          <button class="btn-primary" onclick="openJobModal()">+ Post a Job</button>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiUsers">—</div>
+              <div class="kpi-label">Total Users</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">💼</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiJobsAdmin">—</div>
+              <div class="kpi-label">Jobs Posted</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiAllMatches">—</div>
+              <div class="kpi-label">Total Matches</div>
+            </div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-icon">🏆</div>
+            <div class="kpi-body">
+              <div class="kpi-val" id="kpiTopScore">—</div>
+              <div class="kpi-label">Top Score</div>
+            </div>
           </div>
         </div>
-        <div class="kpi">
-          <div class="kpi-icon">💼</div>
-          <div class="kpi-body">
-            <div class="kpi-val" id="kpiJobs">—</div>
-            <div class="kpi-label">Jobs Available</div>
+
+        <div class="dash-grid">
+          <div class="dash-panel">
+            <div class="panel-head">
+              <span>Recent Users</span>
+              <a href="#" onclick="navigate('admin-users')" class="panel-link">View all →</a>
+            </div>
+            <div id="adminDashUsers"></div>
           </div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-icon">🎯</div>
-          <div class="kpi-body">
-            <div class="kpi-val" id="kpiBest">—</div>
-            <div class="kpi-label">Best Match</div>
-          </div>
-        </div>
-        <div class="kpi">
-          <div class="kpi-icon">📊</div>
-          <div class="kpi-body">
-            <div class="kpi-val" id="kpiMatches">—</div>
-            <div class="kpi-label">Total Matches</div>
+          <div class="dash-panel">
+            <div class="panel-head">
+              <span>Top Matches (All Users)</span>
+              <a href="#" onclick="navigate('admin-matches')" class="panel-link">View all →</a>
+            </div>
+            <div id="adminDashMatches"></div>
           </div>
         </div>
       </div>
 
-      <div class="dash-grid">
-        <div class="dash-panel">
-          <div class="panel-head">
-            <span>Recent Resumes</span>
-            <a href="#" onclick="navigate('resumes')" class="panel-link">View all →</a>
-          </div>
-          <div id="dashResumeList"></div>
-        </div>
-        <div class="dash-panel">
-          <div class="panel-head">
-            <span>Top Matches</span>
-            <a href="#" onclick="navigate('matches')" class="panel-link">View all →</a>
-          </div>
-          <div id="dashMatchList"></div>
-        </div>
-      </div>
     </div>
 
     <!-- ── RESUMES ── -->
@@ -306,7 +386,6 @@
           <h2>Job Listings</h2>
           <p class="muted">Browse and post job openings</p>
         </div>
-        <button class="btn-primary" onclick="openJobModal()">+ Post a Job</button>
       </div>
       <div id="jobGrid" class="card-grid"></div>
     </div>
@@ -320,6 +399,29 @@
         </div>
       </div>
       <div id="matchList"></div>
+    </div>
+
+    <!-- ── ADMIN: ALL USERS ── -->
+    <div id="view-admin-users" class="view">
+      <div class="view-header">
+        <div>
+          <h2>All Users</h2>
+          <p class="muted">Registered users on the platform</p>
+        </div>
+        <button class="btn-primary" onclick="openAdminRegisterModal()">+ Add Admin</button>
+      </div>
+      <div id="adminUserTable"></div>
+    </div>
+
+    <!-- ── ADMIN: ALL MATCHES ── -->
+    <div id="view-admin-matches" class="view">
+      <div class="view-header">
+        <div>
+          <h2>All Match Scores</h2>
+          <p class="muted">Every resume-job match across all users</p>
+        </div>
+      </div>
+      <div id="adminMatchList"></div>
     </div>
 
   </div><!-- /app-main -->
@@ -393,6 +495,35 @@
     </div>
     <div class="modal-bd" id="matchModalBody">
       <div class="loading-wrap"><div class="spinner"></div><p>Analyzing your resume…</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN REGISTER MODAL ── -->
+<div id="adminRegisterModal" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-hd">
+      <h3>Add Admin Account</h3>
+      <button class="modal-x" onclick="closeModal('adminRegisterModal')">✕</button>
+    </div>
+    <div class="modal-bd">
+      <div class="field">
+        <label>Full Name</label>
+        <input type="text" id="adminRegName" placeholder="Admin Name"/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="adminRegEmail" placeholder="admin@example.com"/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="adminRegPassword" placeholder="Min 6 characters"/>
+      </div>
+      <div id="adminRegErr" class="form-err hidden"></div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" onclick="closeModal('adminRegisterModal')">Cancel</button>
+      <button class="btn-primary" onclick="doAdminRegister()">Create Admin</button>
     </div>
   </div>
 </div>

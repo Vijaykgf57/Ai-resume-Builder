@@ -1,38 +1,29 @@
 package com.resumeai.entity;
 
-import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.util.List;
-
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @NotBlank
     private String name;
 
     @Email @NotBlank
-    @Column(unique = true)
+    @Indexed(unique = true)
     private String email;
 
     @NotBlank
     private String password;
 
-    @Enumerated(EnumType.STRING)
-    private Role role;
-
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Resume> resumes;
-
-    public enum Role {
-        USER, ADMIN
-    }
+    @Builder.Default
+    private String role = "USER";
 }

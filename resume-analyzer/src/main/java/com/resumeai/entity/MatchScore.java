@@ -1,48 +1,30 @@
 package com.resumeai.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "match_scores")
+@Document(collection = "match_scores")
+@CompoundIndex(name = "resume_job_idx", def = "{'resumeId': 1, 'jobId': 1}", unique = true)
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class MatchScore {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id", nullable = false)
-    private Resume resume;
+    private String resumeId;
+    private String jobId;
+    private String jobTitle;
+    private String userId;
+    private String userEmail;   // stored at match time for admin display
+    private String resumeFileName;
 
-    @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id", nullable = false)
-    private Job job;
+    private double skillScore;
+    private double textSimilarityScore;
+    private double finalScore;
 
-    /** Weighted skill match score (0-100) */
-    @Column(name = "skill_score")
-    private Double skillScore;
-
-    /** Text similarity score using TF-IDF cosine similarity (0-100) */
-    @Column(name = "text_similarity_score")
-    private Double textSimilarityScore;
-
-    /** Final combined score (0-100) */
-    @Column(name = "final_score")
-    private Double finalScore;
-
-    @Column(name = "calculated_at")
     private LocalDateTime calculatedAt;
-
-    @PrePersist
-    @PreUpdate
-    public void prePersist() {
-        this.calculatedAt = LocalDateTime.now();
-    }
 }

@@ -17,24 +17,14 @@ public class MatchController {
 
     private final MatchingService matchingService;
 
-    /**
-     * POST /api/matches/{resumeId}
-     * Trigger AI matching for a specific resume against all jobs.
-     * Returns ranked job matches with scores.
-     */
     @PostMapping("/{resumeId}")
     public ResponseEntity<MatchResponse> computeMatches(
-            @PathVariable Long resumeId,
+            @PathVariable String resumeId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        MatchResponse response = matchingService.computeMatches(resumeId, userDetails.getUsername());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(matchingService.computeMatches(resumeId, userDetails.getUsername()));
     }
 
-    /**
-     * GET /api/matches
-     * Get all previously computed matches for the authenticated user.
-     */
     @GetMapping
     public ResponseEntity<List<MatchResponse.JobMatch>> getMyMatches(
             @AuthenticationPrincipal UserDetails userDetails

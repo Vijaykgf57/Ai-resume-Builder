@@ -1,41 +1,34 @@
 package com.resumeai.entity;
 
-import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-@Entity
-@Table(name = "resumes")
+@Document(collection = "resumes")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Resume {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Indexed
+    private String userId;
 
-    @Column(name = "file_name")
     private String fileName;
 
-    @Column(name = "extracted_text", columnDefinition = "TEXT")
     private String extractedText;
 
-    @Column(name = "uploaded_at")
     private LocalDateTime uploadedAt;
 
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ResumeSkill> resumeSkills;
+    @Builder.Default
+    private List<SkillEntry> extractedSkills = new ArrayList<>();
 
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<MatchScore> matchScores;
-
-    @PrePersist
     public void prePersist() {
-        this.uploadedAt = LocalDateTime.now();
+        if (this.uploadedAt == null) this.uploadedAt = LocalDateTime.now();
     }
 }
